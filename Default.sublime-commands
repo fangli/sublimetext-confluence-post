@@ -1,6 +1,6 @@
 [
     {
-        "caption": "Markup Jira Confluence: Post page to Jira Confluence",
-        "command": "markup_jira_confluence"
+        "caption": "Confluence Post: Post page to Confluence",
+        "command": "confluence_post"
     }
 ]

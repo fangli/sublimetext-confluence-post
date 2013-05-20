@@ -5,15 +5,16 @@
     /*
         Sets the default Jira Confluence xmlrpc url
     */
-    "confluence_url": "http://confluence.example.com/wiki/rpc/xmlrpc",
+    "confluence_url": "http://wiki.example.com/rpc/xmlrpc",
 
     /*
         Sets the Confluence username
     */
-    "username": "confluence_username",
+    "confluence_username": "confluence_username",
 
     /*
         Sets the Confluence password
     */
-    "password": "confluence_password"
+    "confluence_password": "confluence_password"
+
 }

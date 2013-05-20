@@ -1,45 +1,61 @@
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
+
+
 import sublime
 import sublime_plugin
-import markdown2
 import re
 from xmlrpclib import ServerProxy
 import socket
 
 
-def markdown_to_html(content):
-    return markdown2.markdown(content).encode('utf-8')
-
-
-def rst_to_html(content):
+def convert_markdown_to_html(content):
     try:
-        from docutils.core import publish_string
-        return publish_string(content, writer_name='html')
-    except ImportError:
-        error_msg = """RstPreview requires docutils to be installed for the python interpreter that Sublime uses.
-    run: `sudo easy_install-2.6 docutils` and restart Sublime (if on Mac OS X or Linux). For Windows check the docs at
-    https://github.com/d0ugal/RstPreview"""
-        sublime.error_message(error_msg)
-        raise
+        import markdown2
+    except:
+        sublime.message_dialog('markdown2 not installed, using "sudo easy_install markdown2" and restart sublime')
+    return markdown2.markdown(content).encode('utf8')
 
 
-class MarkupJiraConfluenceCommand(sublime_plugin.TextCommand):
+def convert_to_html(content, syntax, file_name):
+    if syntax == "Markdown":
+        return convert_markdown_to_html(content)
+    try:
+        from pygments import highlight
+        from pygments.formatters import HtmlFormatter
+        from pygments.lexers import (get_lexer_by_name, get_lexer_for_filename)
+    except:
+        sublime.message_dialog('Pygments not installed, using "sudo easy_install Pygments" and restart sublime')
+        raise("Pygments not installed")
+
+    try:
+        lexer = get_lexer_by_name(syntax.lower(), stripall=True)
+    except:
+        lexer = None
+
+    if lexer is None:
+        try:
+            lexer = get_lexer_for_filename(file_name, content, stripall=True)
+        except:
+            sublime.message_dialog('We don\'t know the syntax type for ' + syntax)
+            raise
+
+    formatter = HtmlFormatter(linenos=True, cssclass="source", noclasses=True)
+    return highlight(content, lexer, formatter)
+
+
+class ConfluencePostCommand(sublime_plugin.TextCommand):
 
     def __init__(self, view):
         self.view = view
-        self.markups = dict(
-            Markdown=markdown_to_html,
-            reStructuredText=rst_to_html)
 
-    def markup_to_html(self, content):
+    def to_html(self, content):
         syntax = self.view.settings().get('syntax')
         syntax = syntax.split('.')[0].split('/')[-1]
-        if not syntax in self.markups:
-            sublime.message_dialog('not support %s syntax yet' % syntax)
-            return
-        else:
-            converter = self.markups[syntax]
-        new_content = converter(content)
-        return new_content
+        view = sublime.Window.active_view(sublime.active_window())
+
+        html_content = convert_to_html(content, syntax, view.file_name())
+        return html_content
 
     def get_meta_and_content(self, contents):
         meta = dict()
@@ -47,11 +63,11 @@ class MarkupJiraConfluenceCommand(sublime_plugin.TextCommand):
         tmp = contents.splitlines()
         for x, entry in enumerate(tmp):
             if entry.strip():
-                if re.match(r'[Ss]pace: *', entry):
+                if re.match(r'#[Ss]pace: *', entry):
                     meta['space'] = re.sub('[^:]*: *', '', entry)
-                elif re.match(r'[Pp]arent Title: *', entry):
+                elif re.match(r'#[Pp]arent: *', entry):
                     meta['parent_title'] = re.sub('[^:]*: *', '', entry)
-                elif re.match(r'[Tt]itle: *', entry):
+                elif re.match(r'#[Tt]itle: *', entry):
                     meta['title'] = re.sub('[^:]*: *', '', entry)
             else:
                 content = tmp[x+1:]
@@ -93,7 +109,7 @@ class MarkupJiraConfluenceCommand(sublime_plugin.TextCommand):
         region = sublime.Region(0, self.view.size())
         contents = self.view.substr(region)
         meta, content = self.get_meta_and_content(contents)
-        new_content = self.markup_to_html('\n'.join(content))
+        new_content = self.to_html('\n'.join(content))
         if not new_content:
             return
 
