@@ -12,12 +12,12 @@
                 "children":
                 [
                     {
-                        "caption": "Markup Jira Confluence",
+                        "caption": "Confluence Post",
                         "children":
                         [
                             {
                                 "command": "open_file",
-                                "args": {"file": "${packages}/Markup Jira Confluence/MarkupJiraConfluence.sublime-settings"},
+                                "args": {"file": "${packages}/sublimetext-confluence-post/MarkupJiraConfluence.sublime-settings"},
                                 "caption": "Settings – Default"
                             },
                             {
